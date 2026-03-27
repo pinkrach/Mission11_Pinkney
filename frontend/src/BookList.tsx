@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Book } from "./types/book";
 
+type PagedBooksResponse = {
+    items: Book[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+};
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5204";
+
 function BookList() {
 
     const [books, setBooks] = useState<Book[]>([]);
@@ -8,45 +17,40 @@ function BookList() {
     const [pageSize, setPageSize] = useState<number>(5);
     const [page, setPage] = useState<number>(1);
     const [query, setQuery] = useState<string>("");
+    const [sortBy, setSortBy] = useState<string>("title");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [totalCount, setTotalCount] = useState<number>(0);
 
     useEffect(() => {
         const load = async () => {
             try {
                 setError(null);
-                const res = await fetch("http://localhost:5204/api/book");
+                const params = new URLSearchParams({
+                    page: String(page),
+                    pageSize: String(pageSize),
+                    search: query,
+                    sortBy,
+                    sortOrder,
+                });
+                const res = await fetch(`${API_BASE}/api/book?${params.toString()}`);
                 if (!res.ok) {
                     throw new Error(`Request failed: ${res.status} ${res.statusText}`);
                 }
-                const data = (await res.json()) as Book[];
-                setBooks(data);
-                setPage(1);
+                const data = (await res.json()) as PagedBooksResponse;
+                setBooks(data.items ?? []);
+                setTotalCount(data.totalCount ?? 0);
             } catch (e) {
                 setError(e instanceof Error ? e.message : "Failed to load books");
             }
         };
 
         void load();
-    }, []);
-
-    const filtered = useMemo(
-        () =>
-            books.filter((b) =>
-                b.title.toLowerCase().includes(query.trim().toLowerCase())
-            ),
-        [books, query]
-    );
+    }, [page, pageSize, query, sortBy, sortOrder]);
 
     const totalPages = useMemo(
-        () => (filtered.length === 0 ? 1 : Math.ceil(filtered.length / pageSize)),
-        [filtered.length, pageSize]
+        () => (totalCount === 0 ? 1 : Math.ceil(totalCount / pageSize)),
+        [totalCount, pageSize]
     );
-
-    const currentPage = Math.min(page, totalPages);
-
-    const pagedBooks = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return filtered.slice(start, start + pageSize);
-    }, [filtered, currentPage, pageSize]);
 
     const pageSizeControl = (
         <label
@@ -102,6 +106,55 @@ function BookList() {
         />
     );
 
+    const sortControl = (
+        <label
+            style={{
+                fontSize: "0.9rem",
+                color: "#475569",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.4rem",
+            }}
+        >
+            Sort
+            <select
+                value={sortBy}
+                onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setPage(1);
+                }}
+                style={{
+                    padding: "0.15rem 0.4rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #cbd5f5",
+                    fontSize: "0.9rem",
+                }}
+            >
+                <option value="title">Title</option>
+                <option value="author">Author</option>
+                <option value="publisher">Publisher</option>
+                <option value="price">Price</option>
+                <option value="pageCount">Pages</option>
+            </select>
+            <select
+                value={sortOrder}
+                onChange={(e) => {
+                    setSortOrder(e.target.value as "asc" | "desc");
+                    setPage(1);
+                }}
+                style={{
+                    padding: "0.15rem 0.4rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #cbd5f5",
+                    fontSize: "0.9rem",
+                }}
+            >
+                <option value="asc">Asc</option>
+                <option value="desc">Desc</option>
+            </select>
+        </label>
+    );
+
     const paginationControls = (
         <div
             style={{
@@ -114,31 +167,31 @@ function BookList() {
         >
             <button
                 type="button"
-                disabled={currentPage <= 1}
+                disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 style={{
                     padding: "0.3rem 0.7rem",
                     borderRadius: "0.375rem",
                     border: "1px solid #cbd5f5",
-                    background: currentPage <= 1 ? "#e5e7eb" : "white",
-                    cursor: currentPage <= 1 ? "default" : "pointer",
+                    background: page <= 1 ? "#e5e7eb" : "white",
+                    cursor: page <= 1 ? "default" : "pointer",
                 }}
             >
                 Previous
             </button>
             <span style={{ color: "#64748b" }}>
-                Page {currentPage} of {totalPages}
+                Page {page} of {totalPages}
             </span>
             <button
                 type="button"
-                disabled={currentPage >= totalPages}
+                disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 style={{
                     padding: "0.3rem 0.7rem",
                     borderRadius: "0.375rem",
                     border: "1px solid #cbd5f5",
-                    background: currentPage >= totalPages ? "#e5e7eb" : "white",
-                    cursor: currentPage >= totalPages ? "default" : "pointer",
+                    background: page >= totalPages ? "#e5e7eb" : "white",
+                    cursor: page >= totalPages ? "default" : "pointer",
                 }}
             >
                 Next
@@ -161,7 +214,7 @@ function BookList() {
                 }}
             >
                 <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                    {filtered.length} of {books.length} shown
+                    {books.length} of {totalCount} shown
                 </span>
                 <div
                     style={{
@@ -173,6 +226,7 @@ function BookList() {
                     }}
                 >
                     {pageSizeControl}
+                    {sortControl}
                     {searchControl}
                 </div>
                 {paginationControls}
@@ -186,7 +240,7 @@ function BookList() {
                     alignItems: "center",
                 }}
             >
-                {pagedBooks.map((b) => (
+                {books.map((b) => (
                     <article
                         key={b.bookID}
                         style={{

@@ -63,3 +63,4 @@
 /Users/rachelpinkney/RiderProjects/Mission11/backend/obj/Debug/net10.0/Mission11.API.pdb
 /Users/rachelpinkney/RiderProjects/Mission11/backend/obj/Debug/net10.0/Mission11.API.genruntimeconfig.cache
 /Users/rachelpinkney/RiderProjects/Mission11/backend/obj/Debug/net10.0/ref/Mission11.API.dll
+/Users/rachelpinkney/RiderProjects/Mission11/backend/obj/Debug/net10.0/Mission11.API.sourcelink.json

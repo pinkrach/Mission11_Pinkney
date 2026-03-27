@@ -7,6 +7,8 @@ type Props = {
 
 type NewBook = Omit<Book, "bookID">;
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5204";
+
 const empty: NewBook = {
     title: "",
     author: "",
@@ -32,7 +34,7 @@ function AddBook({ onAdded }: Props) {
             setError(null);
             setSubmitting(true);
 
-            const res = await fetch("http://localhost:5204/api/book", {
+            const res = await fetch(`${API_BASE}/api/book`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(form),
