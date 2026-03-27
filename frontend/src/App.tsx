@@ -1,87 +1,111 @@
-import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { NavLink, Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
 import BookList from './BookList'
 import AddBook from './AddBook'
+import CartPage from './pages/CartPage'
+import { CartProvider, useCart } from './context/CartContext'
 
-type Page = 'list' | 'add';
-
-function App() {
-  const [page, setPage] = useState<Page>('list')
+function AppLayout() {
+  const { totalItemCount, grandTotal } = useCart()
 
   return (
     <>
-      <nav
-        style={{
-          position: 'sticky',
-          top: 0,
-          width: '100%',
-          background: 'linear-gradient(90deg, #a855f7, #3b82f6)',
-          borderBottom: '2px solid rgba(170, 59, 255, 0.35)',
-          padding: '0.75rem 0',
-          zIndex: 10,
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: '1126px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '0.75rem',
-            padding: '0 1.5rem',
-            boxSizing: 'border-box',
-          }}
-        >
-          <MenuButton active={page === 'list'} onClick={() => setPage('list')}>
-            Book List
-          </MenuButton>
-          <MenuButton active={page === 'add'} onClick={() => setPage('add')}>
-            Add Book
-          </MenuButton>
+      <nav className="stack-nav">
+        <div className="stack-nav-inner">
+          <NavLink to="/" className="stack-logo" end>
+            &lt; The Stack /&gt;
+          </NavLink>
+          <div className="stack-nav-links">
+            <MenuNavLink to="/" end>
+              Book List
+            </MenuNavLink>
+            <MenuNavLink to="/add">Add Book</MenuNavLink>
+            <NavLink
+              to="/cart"
+              title={`Shopping cart — $${grandTotal.toFixed(2)}`}
+              className={({ isActive }) =>
+                `stack-cart-link${isActive ? ' stack-cart-link--active' : ''}`
+              }
+            >
+              <span className="stack-cart-icon-wrap">
+                <CartIcon />
+                {totalItemCount > 0 && (
+                  <span className="stack-cart-badge">
+                    {totalItemCount > 99 ? '99+' : totalItemCount}
+                  </span>
+                )}
+              </span>
+              <span className="stack-nav-cart-total">
+                ${grandTotal.toFixed(2)}
+              </span>
+            </NavLink>
+          </div>
         </div>
       </nav>
 
-      {page === 'list' ? (
-        <BookList />
-      ) : (
-        <AddBook
-          onAdded={() => {
-            setPage('list')
-          }}
-        />
-      )}
+      <div className="stack-page">
+        <Outlet />
+      </div>
     </>
   )
 }
 
-function MenuButton({
-  active,
-  onClick,
+function MenuNavLink({
+  to,
+  end,
   children,
 }: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
+  to: string
+  end?: boolean
+  children: ReactNode
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        padding: '0.45rem 0.9rem',
-        borderRadius: '0.5rem',
-        border: active ? '1px solid rgba(170, 59, 255, 0.55)' : '1px solid rgba(148, 163, 184, 0.55)',
-        background: active ? '#ffffff' : '#f9fafb',
-        color: active ? '#0f172a' : '#334155',
-        cursor: 'pointer',
-        fontSize: '0.95rem',
-        boxShadow: active ? '0 8px 14px -10px rgba(15, 23, 42, 0.6)' : 'none',
-      }}
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `stack-nav-link${isActive ? ' stack-nav-link-active' : ''}`
+      }
     >
       {children}
-    </button>
+    </NavLink>
   )
 }
 
-export default App
+function CartIcon() {
+  return (
+    <svg
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="9" cy="20" r="1.5" fill="currentColor" />
+      <circle cx="18" cy="20" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+export default function App() {
+  return (
+    <CartProvider>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route index element={<BookList />} />
+          <Route path="add" element={<AddBook />} />
+          <Route path="cart" element={<CartPage />} />
+        </Route>
+      </Routes>
+    </CartProvider>
+  )
+}

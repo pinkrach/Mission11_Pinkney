@@ -1,5 +1,12 @@
 # React + TypeScript + Vite
 
+## Mission11 (The Stack) — Bootstrap UI
+
+This project uses **Bootstrap 5** (the `bootstrap` package) for:
+
+- **Breadcrumb** — catalog trail above the book list; the active segment updates when categories are selected (`BookList.tsx`, styled via `.stack-breadcrumb` in `stack.css`).
+- **Modal** — full book metadata on the cart page (`CartBookDetailsModal.tsx`), using Bootstrap `.modal` / `.modal-dialog` / `.list-group-flush` classes with React-controlled open/close state (not `react-bootstrap`).
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

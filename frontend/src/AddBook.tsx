@@ -1,9 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Book } from "./types/book";
-
-type Props = {
-    onAdded: () => void;
-};
 
 type NewBook = Omit<Book, "bookID">;
 
@@ -20,7 +17,8 @@ const empty: NewBook = {
     price: 0,
 };
 
-function AddBook({ onAdded }: Props) {
+function AddBook() {
+    const navigate = useNavigate();
     const [form, setForm] = useState<NewBook>(empty);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,7 +46,7 @@ function AddBook({ onAdded }: Props) {
             }
 
             setForm(empty);
-            onAdded();
+            navigate("/");
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to add book");
         } finally {
@@ -57,23 +55,26 @@ function AddBook({ onAdded }: Props) {
     };
 
     return (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem" }}>
+        <div className="container py-4 mt-4">
+            <div className="row justify-content-center">
+                <div className="col-12 col-md-10 col-lg-8 col-xl-6">
             <form
                 onSubmit={submit}
+                className="stack-form-card"
                 style={{
-                    width: "35%",
-                    minWidth: "320px",
+                    width: "100%",
                     maxWidth: "520px",
-                    background: "white",
-                    borderRadius: "0.75rem",
-                    padding: "1.25rem 1.5rem",
-                    border: "1px solid rgba(148, 163, 184, 0.4)",
-                    boxShadow:
-                        "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1)",
+                    margin: "0 auto",
                     textAlign: "left",
                 }}
             >
-                <h2 style={{ margin: 0, marginBottom: "0.75rem" }}>Add Book</h2>
+                <h1 className="stack-brand-heading" style={{ marginBottom: "0.25rem" }}>
+                    The Stack
+                </h1>
+                <p className="stack-brand-sub" style={{ marginBottom: "1rem" }}>
+                    New acquisition
+                </p>
+                <h2 className="stack-form-title">Add Book</h2>
                 {error && <p style={{ color: "crimson", marginBottom: "0.75rem" }}>{error}</p>}
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem" }}>
@@ -127,27 +128,32 @@ function AddBook({ onAdded }: Props) {
                 <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-end" }}>
                     <button
                         type="submit"
+                        className="stack-btn-primary"
                         disabled={submitting}
                         style={{
-                            padding: "0.4rem 0.9rem",
-                            borderRadius: "0.5rem",
-                            border: "1px solid #cbd5f5",
-                            background: submitting ? "#e5e7eb" : "white",
-                            cursor: submitting ? "default" : "pointer",
+                            width: "auto",
+                            marginTop: 0,
+                            opacity: submitting ? 0.65 : 1,
+                            cursor: submitting ? "not-allowed" : "pointer",
                         }}
                     >
                         {submitting ? "Saving..." : "Add Book"}
                     </button>
                 </div>
             </form>
+                </div>
+            </div>
         </div>
     );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
-        <label style={{ display: "grid", gap: "0.35rem", fontSize: "0.9rem", color: "#475569" }}>
-            <span>{label}</span>
+        <label
+            className="stack-toolbar"
+            style={{ display: "grid", gap: "0.35rem", color: "var(--stack-ink-muted, #4a4f6a)" }}
+        >
+            <span style={{ fontFamily: "var(--stack-mono, 'Roboto Mono', monospace)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</span>
             <div
                 style={{
                     display: "flex",
@@ -167,7 +173,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
             font-size: 0.95rem;
           }
           input:focus {
-            outline: 2px solid rgba(170, 59, 255, 0.35);
+            outline: 2px solid rgba(0, 122, 255, 0.45);
             outline-offset: 2px;
           }
         `}

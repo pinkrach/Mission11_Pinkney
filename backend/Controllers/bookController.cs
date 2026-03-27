@@ -15,11 +15,35 @@ public class BookController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Categories with book counts for the filter sidebar (one request; avoids a separate summary route).
+    /// </summary>
+    [HttpGet("categories")]
+    public async Task<ActionResult<IReadOnlyList<CategorySummaryDto>>> GetCategories()
+    {
+        var names = await _context.Books.AsNoTracking()
+            .Select(b => b.Category)
+            .ToListAsync();
+
+        var rows = names
+            .GroupBy(c => c ?? string.Empty)
+            .Select(g => new CategorySummaryDto
+            {
+                Category = g.Key,
+                Count = g.Count()
+            })
+            .OrderBy(x => x.Category)
+            .ToList();
+
+        return Ok(rows);
+    }
+
     [HttpGet]
     public async Task<ActionResult<PagedResult<Book>>> GetBooks(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 5,
         [FromQuery] string? search = null,
+        [FromQuery] string[]? categories = null,
         [FromQuery] string sortBy = "title",
         [FromQuery] string sortOrder = "asc")
     {
@@ -32,6 +56,21 @@ public class BookController : ControllerBase
         {
             var term = search.Trim().ToLower();
             query = query.Where(b => b.Title.ToLower().Contains(term));
+        }
+
+        if (categories is { Length: > 0 })
+        {
+            var set = categories
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .Select(c => c.Trim())
+                .Distinct()
+                .ToList();
+
+            if (set.Count > 0)
+            {
+                // OR: any book whose Category is in the selected set
+                query = query.Where(b => set.Contains(b.Category));
+            }
         }
 
         var descending = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase);
@@ -68,6 +107,12 @@ public class BookController : ControllerBase
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetBooks), new { id = book.BookID }, book);
     }
+}
+
+public class CategorySummaryDto
+{
+    public string Category { get; set; } = "";
+    public int Count { get; set; }
 }
 
 public class PagedResult<T>
